@@ -4,7 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://shahbaz:asana@localhost:5432/asanadb"
+    DATABASE_URL: str
     
     # Application
     DEBUG: bool = False

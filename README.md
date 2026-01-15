@@ -46,8 +46,8 @@ This implementation covers the full Asana API including:
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd scaler-assignment
+git clone https://github.com/Shahbaz67/asana-replica.git
+cd asana-replica
 ```
 
 2. Start the services:
@@ -109,7 +109,7 @@ pip install -r requirements.txt
    Create a `.env` file in the project root with the following content:
    ```bash
    # Database Configuration
-   DATABASE_URL=postgresql+asyncpg://shahbaz:asana@localhost:5432/asanadb
+   DATABASE_URL=postgresql+asyncpg://asana:asana@localhost:5432/asana
    
    # Application
    DEBUG=true
@@ -289,7 +289,7 @@ The application uses environment variables for configuration. Create a `.env` fi
 
 - **`DATABASE_URL`** - PostgreSQL connection string
   - Format: `postgresql+asyncpg://user:password@host:port/database`
-  - Example: `postgresql+asyncpg://shahbaz:asana@localhost:5432/asanadb`
+  - Example: `postgresql+asyncpg://asana:asana@localhost:5432/asana`
 
 #### Optional Variables (with defaults)
 
