@@ -74,3 +74,4 @@ test.db
 # Alembic
 alembic/versions/*.pyc
 
+

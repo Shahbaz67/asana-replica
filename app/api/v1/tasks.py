@@ -4,6 +4,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_, func
+from pydantic import ValidationError as PydanticValidationError
 
 from app.api.deps import get_db, TaskQueryParams
 from app.core.exceptions import NotFoundError, ValidationError
@@ -12,6 +13,7 @@ from app.models.workspace import Workspace
 from app.models.project import Project
 from app.models.section import Section
 from app.models.task import Task, TaskProject, TaskTag, TaskDependency, TaskFollower
+from app.models.tag import Tag
 from app.models.tag import Tag
 from app.schemas.task import (
     TaskCreate, TaskUpdate, TaskDuplicateRequest,
@@ -80,11 +82,23 @@ async def create_task(
     """
     Create a new task.
     """
-    task_data = TaskCreate(**data.get("data", {}))
+    try:
+        task_data = TaskCreate(**data.get("data", {}))
+    except PydanticValidationError as e:
+        # Extract error message and convert to Asana-style error
+        errors = e.errors()
+        error_messages = []
+        for error in errors:
+            msg = error.get("msg", "Validation error")
+            # Clean up the message - remove "Value error, " prefix if present
+            if msg.startswith("Value error, "):
+                msg = msg[13:]
+            error_messages.append(msg)
+        raise ValidationError("; ".join(error_messages) if error_messages else "Invalid request")
     
     task = Task(
         gid=generate_gid(),
-        name=task_data.name,
+        name=task_data.name or "",  # Asana allows empty task names
         notes=task_data.notes,
         html_notes=task_data.html_notes,
         resource_subtype=task_data.resource_subtype,
@@ -954,4 +968,206 @@ async def create_task_story(
     await db.commit()
     
     return wrap_response(story.to_response())
+
+
+@router.post("/{task_gid}/addDependents")
+async def add_dependents(
+    task_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Add dependents to a task.
+    
+    Marks other tasks as dependent on this task - they cannot start
+    until this task is completed.
+    """
+    result = await db.execute(select(Task).where(Task.gid == task_gid))
+    task = result.scalar_one_or_none()
+    
+    if not task:
+        raise NotFoundError("Task", task_gid)
+    
+    dep_str = data.get("data", {}).get("dependents", "")
+    dep_gids = [d.strip() for d in dep_str.split(",") if d.strip()]
+    
+    for dep_gid in dep_gids:
+        # Check if dependency already exists
+        result = await db.execute(
+            select(TaskDependency)
+            .where(TaskDependency.task_gid == dep_gid)
+            .where(TaskDependency.depends_on_gid == task_gid)
+        )
+        if not result.scalar_one_or_none():
+            dependency = TaskDependency(
+                gid=generate_gid(),
+                task_gid=dep_gid,
+                depends_on_gid=task_gid,
+            )
+            db.add(dependency)
+    
+    await db.commit()
+    
+    # Return dependents
+    result = await db.execute(
+        select(Task)
+        .join(TaskDependency, Task.gid == TaskDependency.task_gid)
+        .where(TaskDependency.depends_on_gid == task_gid)
+    )
+    dependents = result.scalars().all()
+    
+    return {
+        "data": [t.to_response() for t in dependents]
+    }
+
+
+@router.post("/{task_gid}/removeDependents")
+async def remove_dependents(
+    task_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Remove dependents from a task.
+    
+    Removes the dependency relationship where other tasks depend on this task.
+    """
+    result = await db.execute(select(Task).where(Task.gid == task_gid))
+    task = result.scalar_one_or_none()
+    
+    if not task:
+        raise NotFoundError("Task", task_gid)
+    
+    dep_str = data.get("data", {}).get("dependents", "")
+    dep_gids = [d.strip() for d in dep_str.split(",") if d.strip()]
+    
+    for dep_gid in dep_gids:
+        result = await db.execute(
+            select(TaskDependency)
+            .where(TaskDependency.task_gid == dep_gid)
+            .where(TaskDependency.depends_on_gid == task_gid)
+        )
+        dependency = result.scalar_one_or_none()
+        if dependency:
+            await db.delete(dependency)
+    
+    await db.commit()
+    
+    return {"data": []}
+
+
+@router.get("/{task_gid}/projects")
+async def get_task_projects(
+    task_gid: str,
+    limit: int = Query(20),
+    offset: Optional[str] = Query(None),
+    opt_fields: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Get projects a task is in.
+    
+    Returns all projects that contain the specified task.
+    """
+    result = await db.execute(select(Task).where(Task.gid == task_gid))
+    if not result.scalar_one_or_none():
+        raise NotFoundError("Task", task_gid)
+    
+    result = await db.execute(
+        select(Project)
+        .join(TaskProject, Project.gid == TaskProject.project_gid)
+        .where(TaskProject.task_gid == task_gid)
+    )
+    projects = result.scalars().all()
+    
+    parser = OptFieldsParser(opt_fields)
+    project_responses = [parser.filter(p.to_response()) for p in projects]
+    
+    paginated = paginate(
+        project_responses,
+        offset=offset,
+        limit=limit,
+        base_path=f"/tasks/{task_gid}/projects",
+    )
+    
+    return {
+        "data": paginated.data,
+        "next_page": paginated.next_page.model_dump() if paginated.next_page else None,
+    }
+
+
+@router.get("/{task_gid}/tags")
+async def get_task_tags(
+    task_gid: str,
+    limit: int = Query(20),
+    offset: Optional[str] = Query(None),
+    opt_fields: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Get tags on a task.
+    
+    Returns all tags associated with the specified task.
+    """
+    result = await db.execute(select(Task).where(Task.gid == task_gid))
+    if not result.scalar_one_or_none():
+        raise NotFoundError("Task", task_gid)
+    
+    result = await db.execute(
+        select(Tag)
+        .join(TaskTag, Tag.gid == TaskTag.tag_gid)
+        .where(TaskTag.task_gid == task_gid)
+    )
+    tags = result.scalars().all()
+    
+    parser = OptFieldsParser(opt_fields)
+    tag_responses = [parser.filter(t.to_response()) for t in tags]
+    
+    paginated = paginate(
+        tag_responses,
+        offset=offset,
+        limit=limit,
+        base_path=f"/tasks/{task_gid}/tags",
+    )
+    
+    return {
+        "data": paginated.data,
+        "next_page": paginated.next_page.model_dump() if paginated.next_page else None,
+    }
+
+
+@router.post("/{task_gid}/setSection")
+async def set_task_section(
+    task_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Set the section for a task.
+    
+    Moves a task to a specific section within its project.
+    """
+    result = await db.execute(select(Task).where(Task.gid == task_gid))
+    task = result.scalar_one_or_none()
+    
+    if not task:
+        raise NotFoundError("Task", task_gid)
+    
+    request_data = data.get("data", {})
+    section_gid = request_data.get("section")
+    
+    if section_gid:
+        task.section_gid = section_gid
+        
+        # Update TaskProject association if it exists
+        result = await db.execute(
+            select(TaskProject).where(TaskProject.task_gid == task_gid)
+        )
+        for tp in result.scalars().all():
+            tp.section_gid = section_gid
+    
+    await db.commit()
+    await db.refresh(task)
+    
+    return wrap_response(task.to_response())
 

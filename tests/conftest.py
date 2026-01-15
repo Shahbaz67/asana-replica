@@ -120,3 +120,4 @@ async def auth_headers(client: AsyncClient, test_user: User) -> dict:
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 
+

@@ -174,3 +174,43 @@ async def delete_time_tracking_entry(
     
     return wrap_response({})
 
+
+@router.get("/tasks/{task_gid}/time_tracking_entries")
+async def get_time_tracking_entries_for_task(
+    task_gid: str,
+    params: CommonQueryParams = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Get time tracking entries for a task.
+    
+    Returns all time tracking entries associated with the specified task.
+    Alternative endpoint path matching Asana API structure.
+    """
+    result = await db.execute(select(Task).where(Task.gid == task_gid))
+    if not result.scalar_one_or_none():
+        raise NotFoundError("Task", task_gid)
+    
+    result = await db.execute(
+        select(TimeTrackingEntry)
+        .where(TimeTrackingEntry.task_gid == task_gid)
+        .order_by(TimeTrackingEntry.entered_on.desc())
+    )
+    entries = result.scalars().all()
+    
+    parser = OptFieldsParser(params.opt_fields)
+    entry_responses = [parser.filter(e.to_response()) for e in entries]
+    
+    paginated = paginate(
+        entry_responses,
+        offset=params.offset,
+        limit=params.limit,
+        base_path=f"/tasks/{task_gid}/time_tracking_entries",
+    )
+    
+    return {
+        "data": paginated.data,
+        "next_page": paginated.next_page.model_dump() if paginated.next_page else None,
+    }
+
+

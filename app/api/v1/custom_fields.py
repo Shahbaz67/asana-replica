@@ -285,3 +285,67 @@ async def update_enum_option(
     
     return wrap_response(option.to_response())
 
+
+@router.post("/{custom_field_gid}/enum_options/insert")
+async def insert_enum_option(
+    custom_field_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Insert/reorder an enum option.
+    
+    Moves an enum option to a new position relative to another option.
+    """
+    result = await db.execute(select(CustomField).where(CustomField.gid == custom_field_gid))
+    custom_field = result.scalar_one_or_none()
+    
+    if not custom_field:
+        raise NotFoundError("CustomField", custom_field_gid)
+    
+    if custom_field.resource_subtype not in ("enum", "multi_enum"):
+        raise ValidationError("Can only reorder enum options for enum or multi_enum fields")
+    
+    insert_data = data.get("data", {})
+    enum_option_gid = insert_data.get("enum_option")
+    
+    if not enum_option_gid:
+        raise ValidationError("enum_option is required")
+    
+    result = await db.execute(
+        select(CustomFieldEnumOption)
+        .where(CustomFieldEnumOption.gid == enum_option_gid)
+        .where(CustomFieldEnumOption.custom_field_gid == custom_field_gid)
+    )
+    option = result.scalar_one_or_none()
+    
+    if not option:
+        raise NotFoundError("EnumOption", enum_option_gid)
+    
+    # Handle before_enum_option and after_enum_option
+    before_gid = insert_data.get("before_enum_option")
+    after_gid = insert_data.get("after_enum_option")
+    
+    if before_gid:
+        result = await db.execute(
+            select(CustomFieldEnumOption)
+            .where(CustomFieldEnumOption.gid == before_gid)
+        )
+        before_option = result.scalar_one_or_none()
+        if before_option:
+            option.order = before_option.order - 1
+    elif after_gid:
+        result = await db.execute(
+            select(CustomFieldEnumOption)
+            .where(CustomFieldEnumOption.gid == after_gid)
+        )
+        after_option = result.scalar_one_or_none()
+        if after_option:
+            option.order = after_option.order + 1
+    
+    await db.commit()
+    await db.refresh(option)
+    
+    return wrap_response(option.to_response())
+
+

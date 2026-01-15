@@ -1,28 +1,61 @@
 from typing import Optional, List, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from datetime import date, datetime
 
 
 class TaskBase(BaseModel):
     """Base task schema."""
-    name: str = Field(..., min_length=1, max_length=255)
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
     notes: Optional[str] = None
     html_notes: Optional[str] = None
 
 
 class TaskCreate(TaskBase):
-    """Schema for creating a task."""
+    """Schema for creating a task.
+    
+    Based on: https://developers.asana.com/reference/createtask
+    Total: 23 body parameters
+    """
+    # Location/context (3)
     workspace: Optional[str] = Field(None, description="Workspace GID")
     projects: Optional[List[str]] = Field(None, description="List of project GIDs")
-    assignee: Optional[str] = Field(None, description="Assignee user GID")
+    parent: Optional[str] = Field(None, description="Parent task GID for subtasks")
+    
+    # Assignment (2)
+    assignee: Optional[str] = Field(None, description="Assignee user GID or email")
+    assignee_section: Optional[str] = Field(None, description="Section GID in assignee's My Tasks")
+    
+    # Dates (4)
     due_on: Optional[date] = None
     due_at: Optional[datetime] = None
     start_on: Optional[date] = None
     start_at: Optional[datetime] = None
+    
+    # Task type/status (4)
     resource_subtype: str = Field(default="default_task", pattern="^(default_task|milestone|section|approval)$")
+    approval_status: Optional[str] = Field(None, pattern="^(pending|approved|rejected|changes_requested)$")
+    custom_type: Optional[str] = Field(None, description="GID of a custom task type")
+    custom_type_status_option: Optional[str] = Field(None, description="Option GID for custom type's status")
+    
+    # Associations (2)
     tags: Optional[List[str]] = None
-    parent: Optional[str] = Field(None, description="Parent task GID for subtasks")
     followers: Optional[List[str]] = None
+    
+    # State (3)
+    completed: Optional[bool] = Field(None, description="Whether the task is completed")
+    liked: Optional[bool] = Field(None, description="Whether the current user likes the task")
+    is_rendered_as_separator: Optional[bool] = Field(None, description="For board/list rendering")
+    
+    # Data (2)
+    custom_fields: Optional[dict] = Field(None, description="Custom field values keyed by GID")
+    external: Optional[dict] = Field(None, description="External data for integrations")
+    
+    @model_validator(mode='after')
+    def validate_workspace_parent_or_projects(self):
+        """Validate that at least one of workspace, parent, or projects is provided."""
+        if not self.workspace and not self.parent and not self.projects:
+            raise ValueError("You should specify one of workspace, parent, projects")
+        return self
 
 
 class TaskUpdate(BaseModel):
@@ -41,7 +74,10 @@ class TaskUpdate(BaseModel):
 
 
 class TaskResponse(BaseModel):
-    """Task response schema."""
+    """Task response schema.
+    
+    Based on: https://developers.asana.com/reference/createtask
+    """
     gid: str
     resource_type: str = "task"
     resource_subtype: str = "default_task"
@@ -50,6 +86,7 @@ class TaskResponse(BaseModel):
     html_notes: Optional[str] = None
     completed: bool = False
     completed_at: Optional[str] = None
+    completed_by: Optional[dict] = None
     due_on: Optional[str] = None
     due_at: Optional[str] = None
     start_on: Optional[str] = None
@@ -60,14 +97,21 @@ class TaskResponse(BaseModel):
     created_at: Optional[str] = None
     modified_at: Optional[str] = None
     assignee: Optional[dict] = None
+    assignee_section: Optional[dict] = None
     parent: Optional[dict] = None
     projects: Optional[List[dict]] = None
+    memberships: Optional[List[dict]] = None
     tags: Optional[List[dict]] = None
     followers: Optional[List[dict]] = None
     workspace: Optional[dict] = None
+    dependencies: Optional[List[dict]] = None
+    dependents: Optional[List[dict]] = None
     approval_status: Optional[str] = None
     permalink_url: Optional[str] = None
     custom_fields: Optional[List[dict]] = None
+    external: Optional[dict] = None
+    actual_time_minutes: Optional[int] = None
+    is_rendered_as_separator: bool = False
     
     class Config:
         from_attributes = True
@@ -187,4 +231,5 @@ class TaskSearchRequest(BaseModel):
     completed_on_after: Optional[date] = None
     sort_by: str = Field(default="modified_at", pattern="^(due_date|created_at|completed_at|likes|modified_at)$")
     sort_ascending: bool = False
+
 

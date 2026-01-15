@@ -344,3 +344,4 @@ class TaskTemplate(AsanaBase):
             response["project"] = {"gid": self.project_gid, "resource_type": "project"}
         return response
 
+

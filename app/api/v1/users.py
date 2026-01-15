@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db, CommonQueryParams
 from app.core.exceptions import NotFoundError
+from app.models.user import User
 from app.models.workspace import WorkspaceMembership
 from app.models.user_task_list import UserTaskList
 from app.models.user_favorites import UserFavorite
@@ -241,6 +242,78 @@ async def get_user_workspace_memberships(
         offset=params.offset,
         limit=params.limit,
         base_path=f"/users/{user_gid}/workspace_memberships",
+    )
+    
+    return {
+        "data": paginated.data,
+        "next_page": paginated.next_page.model_dump() if paginated.next_page else None,
+    }
+
+
+@router.get("/me")
+async def get_current_user(
+    opt_fields: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Get the current user (me).
+    
+    Returns the user record for the currently authenticated user.
+    This is a convenience endpoint that returns the same data as /users/{user_gid}
+    but doesn't require knowing the user's GID.
+    """
+    # Get the first active user as a simulation
+    result = await db.execute(
+        select(User).where(User.is_active == True).limit(1)
+    )
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise NotFoundError("User", "me")
+    
+    parser = OptFieldsParser(opt_fields)
+    return wrap_response(parser.filter(user.to_response()))
+
+
+@router.get("/{user_gid}/team_memberships")
+async def get_user_team_memberships(
+    user_gid: str,
+    organization: str = Query(..., description="Organization/Workspace GID"),
+    params: CommonQueryParams = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Get a user's team memberships in an organization.
+    
+    Returns all team memberships for the specified user within the organization.
+    """
+    from app.models.team import Team, TeamMembership
+    
+    # Verify user exists
+    result = await db.execute(select(User).where(User.gid == user_gid))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise NotFoundError("User", user_gid)
+    
+    # Get team memberships
+    query = (
+        select(TeamMembership)
+        .join(Team, TeamMembership.team_gid == Team.gid)
+        .where(TeamMembership.user_gid == user_gid)
+        .where(Team.workspace_gid == organization)
+    )
+    
+    result = await db.execute(query)
+    memberships = result.scalars().all()
+    
+    parser = OptFieldsParser(params.opt_fields)
+    membership_responses = [parser.filter(m.to_response()) for m in memberships]
+    
+    paginated = paginate(
+        membership_responses,
+        offset=params.offset,
+        limit=params.limit,
+        base_path=f"/users/{user_gid}/team_memberships",
     )
     
     return {

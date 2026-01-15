@@ -43,3 +43,4 @@ class UserFavorite(AsanaBase):
             "resource_type": self.resource_type,
         }
 
+

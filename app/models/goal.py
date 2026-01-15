@@ -187,6 +187,47 @@ class GoalRelationship(AsanaBase):
         }
 
 
+class GoalMembership(AsanaBase):
+    """Goal membership for tracking collaborators on goals."""
+    __tablename__ = "goal_memberships"
+    
+    # Role (owner, member)
+    role: Mapped[str] = mapped_column(String(50), default="member", nullable=False)
+    
+    # Foreign keys
+    goal_gid: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("goals.gid", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    
+    member_gid: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("users.gid", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    
+    # Relationships
+    goal: Mapped["Goal"] = relationship("Goal")
+    member: Mapped["User"] = relationship("User")
+    
+    @property
+    def resource_type(self) -> str:
+        return "goal_membership"
+    
+    def to_response(self) -> dict:
+        """Convert to API response format."""
+        return {
+            "gid": self.gid,
+            "resource_type": self.resource_type,
+            "goal": {"gid": self.goal_gid, "resource_type": "goal"},
+            "member": {"gid": self.member_gid, "resource_type": "user"},
+            "role": self.role,
+        }
+
+
 class StatusUpdate(AsanaBase):
     """Status update for goals and portfolios."""
     __tablename__ = "status_updates"
@@ -242,4 +283,5 @@ class StatusUpdate(AsanaBase):
             response["author"] = {"gid": self.author_gid, "resource_type": "user"}
             
         return response
+
 

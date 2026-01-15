@@ -54,3 +54,4 @@ class AddTaskRequest(BaseModel):
     insert_before: Optional[str] = Field(None, description="Task GID to insert before")
     insert_after: Optional[str] = Field(None, description="Task GID to insert after")
 
+

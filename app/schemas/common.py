@@ -46,3 +46,4 @@ class RequestData(BaseModel, Generic[T]):
     """Request wrapper with data field."""
     data: T
 
+

@@ -94,3 +94,4 @@ async def typeahead_search(
     
     return {"data": results}
 
+

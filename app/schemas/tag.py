@@ -44,3 +44,4 @@ class TagCompact(BaseModel):
     class Config:
         from_attributes = True
 
+

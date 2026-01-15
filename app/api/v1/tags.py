@@ -188,3 +188,72 @@ async def get_tag_tasks(
         "next_page": paginated.next_page.model_dump() if paginated.next_page else None,
     }
 
+
+@router.post("")
+async def create_tag_for_workspace(
+    workspace: str = Query(..., description="Workspace GID"),
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Create a tag in a workspace.
+    
+    Alternative endpoint to create a tag specifying the workspace via query parameter.
+    """
+    result = await db.execute(select(Workspace).where(Workspace.gid == workspace))
+    if not result.scalar_one_or_none():
+        raise NotFoundError("Workspace", workspace)
+    
+    tag_data = data.get("data", {})
+    
+    tag = Tag(
+        gid=generate_gid(),
+        name=tag_data.get("name", "New Tag"),
+        color=tag_data.get("color"),
+        notes=tag_data.get("notes"),
+        workspace_gid=workspace,
+    )
+    db.add(tag)
+    await db.commit()
+    
+    return wrap_response(tag.to_response())
+
+
+@router.get("/workspaces/{workspace_gid}/tags")
+async def get_tags_for_workspace(
+    workspace_gid: str,
+    params: CommonQueryParams = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Get tags in a workspace (alternative endpoint).
+    
+    Returns all tags in the specified workspace.
+    """
+    result = await db.execute(select(Workspace).where(Workspace.gid == workspace_gid))
+    if not result.scalar_one_or_none():
+        raise NotFoundError("Workspace", workspace_gid)
+    
+    result = await db.execute(
+        select(Tag)
+        .where(Tag.workspace_gid == workspace_gid)
+        .order_by(Tag.name)
+    )
+    tags = result.scalars().all()
+    
+    parser = OptFieldsParser(params.opt_fields)
+    tag_responses = [parser.filter(t.to_response()) for t in tags]
+    
+    paginated = paginate(
+        tag_responses,
+        offset=params.offset,
+        limit=params.limit,
+        base_path=f"/workspaces/{workspace_gid}/tags",
+    )
+    
+    return {
+        "data": paginated.data,
+        "next_page": paginated.next_page.model_dump() if paginated.next_page else None,
+    }
+
+

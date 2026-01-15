@@ -59,3 +59,4 @@ class WebhookDelivery(BaseModel):
     """Webhook delivery payload."""
     events: List[WebhookEvent]
 
+

@@ -152,3 +152,36 @@ async def delete_project_template(
     
     return wrap_response({})
 
+
+@router.get("/{project_template_gid}/team")
+async def get_project_template_team(
+    project_template_gid: str,
+    opt_fields: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Get the team for a project template.
+    
+    Returns the team that owns the project template.
+    """
+    result = await db.execute(
+        select(ProjectTemplate).where(ProjectTemplate.gid == project_template_gid)
+    )
+    template = result.scalar_one_or_none()
+    
+    if not template:
+        raise NotFoundError("ProjectTemplate", project_template_gid)
+    
+    if not template.team_gid:
+        raise NotFoundError("Team", "None")
+    
+    result = await db.execute(select(Team).where(Team.gid == template.team_gid))
+    team = result.scalar_one_or_none()
+    
+    if not team:
+        raise NotFoundError("Team", template.team_gid)
+    
+    parser = OptFieldsParser(opt_fields)
+    return wrap_response(parser.filter(team.to_response()))
+
+

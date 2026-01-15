@@ -50,3 +50,4 @@ class TimePeriod(AsanaBase):
             "parent": {"gid": self.parent_gid, "resource_type": "workspace"},
         }
 
+

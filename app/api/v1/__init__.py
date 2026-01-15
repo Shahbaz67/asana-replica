@@ -11,6 +11,8 @@ from app.api.v1 import (
     attachments,
     tags,
     custom_fields,
+    custom_field_settings,
+    custom_types,
     portfolios,
     goals,
     webhooks,
@@ -23,8 +25,17 @@ from app.api.v1 import (
     task_templates,
     audit_logs,
     organization_exports,
+    exports,
     time_periods,
     time_tracking_entries,
+    allocations,
+    access_requests,
+    budgets,
+    memberships,
+    rates,
+    reactions,
+    rules,
+    app_components,
 )
 
 router = APIRouter()
@@ -42,11 +53,13 @@ router.include_router(tags.router, prefix="/tags", tags=["Tags"])
 
 # Advanced features
 router.include_router(custom_fields.router, prefix="/custom_fields", tags=["Custom Fields"])
+router.include_router(custom_field_settings.router, prefix="/custom_field_settings", tags=["Custom Field Settings"])
+router.include_router(custom_types.router, prefix="/custom_types", tags=["Custom Types"])
 router.include_router(portfolios.router, prefix="/portfolios", tags=["Portfolios"])
 router.include_router(goals.router, prefix="/goals", tags=["Goals"])
 router.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
 router.include_router(events.router, prefix="/events", tags=["Events"])
-router.include_router(batch.router, prefix="/batch", tags=["Batch"])
+router.include_router(batch.router, prefix="/batch", tags=["Batch API"])
 
 # Additional features
 router.include_router(typeahead.router, prefix="/typeahead", tags=["Typeahead"])
@@ -56,10 +69,20 @@ router.include_router(project_templates.router, prefix="/project_templates", tag
 router.include_router(task_templates.router, prefix="/task_templates", tags=["Task Templates"])
 
 # Enterprise features
-router.include_router(audit_logs.router, prefix="/audit_log_events", tags=["Audit Logs"])
+router.include_router(audit_logs.router, prefix="/audit_log_events", tags=["Audit Log API"])
 router.include_router(organization_exports.router, prefix="/organization_exports", tags=["Organization Exports"])
+router.include_router(exports.router, prefix="/exports", tags=["Exports"])
 router.include_router(time_periods.router, prefix="/time_periods", tags=["Time Periods"])
 router.include_router(time_tracking_entries.router, prefix="/time_tracking_entries", tags=["Time Tracking Entries"])
+
+# Resource management
+router.include_router(allocations.router, prefix="/allocations", tags=["Allocations"])
+router.include_router(access_requests.router, prefix="/access_requests", tags=["Access Requests"])
+router.include_router(budgets.router, prefix="/budgets", tags=["Budgets"])
+router.include_router(memberships.router, prefix="/memberships", tags=["Memberships"])
+router.include_router(rates.router, prefix="/rates", tags=["Rates"])
+router.include_router(reactions.router, prefix="/reactions", tags=["Reactions"])
+router.include_router(rules.router, prefix="/rules", tags=["Rules"])
 
 # Workspace-specific endpoints for memberships
 router.include_router(
@@ -96,6 +119,13 @@ router.include_router(
     tags=["Goal Relationships"]
 )
 
+# Goal membership endpoints
+router.include_router(
+    goals.membership_router,
+    prefix="/goal_memberships",
+    tags=["Goal Memberships"]
+)
+
 # Status updates
 router.include_router(
     goals.status_router,
@@ -117,3 +147,27 @@ router.include_router(
     tags=["Project Briefs"]
 )
 
+# App Components
+router.include_router(
+    app_components.modal_forms_router,
+    prefix="/modal_forms",
+    tags=["Modal Forms"]
+)
+
+router.include_router(
+    app_components.rule_actions_router,
+    prefix="/rule_actions",
+    tags=["Rule Actions"]
+)
+
+router.include_router(
+    app_components.lookups_router,
+    prefix="/lookups",
+    tags=["Lookups"]
+)
+
+router.include_router(
+    app_components.widgets_router,
+    prefix="/widgets",
+    tags=["Widgets"]
+)

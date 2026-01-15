@@ -19,6 +19,8 @@ from app.schemas.project import (
     AddMembersRequest, RemoveMembersRequest, AddFollowersRequest,
     TaskCountsResponse, ProjectStatusCreate,
     ProjectBriefCreate, ProjectBriefUpdate,
+    SaveAsTemplateRequest, AddCustomFieldRequest, RemoveCustomFieldRequest,
+    JobResponse, CustomFieldSettingResponse,
 )
 from app.utils.pagination import paginate
 from app.utils.filters import OptFieldsParser
@@ -725,4 +727,255 @@ async def delete_project_brief(
     await db.commit()
     
     return wrap_response({})
+
+
+# Additional Project endpoints
+@router.post("/{project_gid}/addFollowers")
+async def add_project_followers(
+    project_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Add followers to a project.
+    
+    Adds users to the list of followers for a project. Followers receive
+    notifications about updates to the project.
+    """
+    result = await db.execute(select(Project).where(Project.gid == project_gid))
+    project = result.scalar_one_or_none()
+    
+    if not project:
+        raise NotFoundError("Project", project_gid)
+    
+    followers_str = data.get("data", {}).get("followers", "")
+    follower_gids = [f.strip() for f in followers_str.split(",") if f.strip()]
+    
+    for user_gid in follower_gids:
+        # Check if already a member (followers are members in our model)
+        result = await db.execute(
+            select(ProjectMembership)
+            .where(ProjectMembership.project_gid == project_gid)
+            .where(ProjectMembership.user_gid == user_gid)
+        )
+        if not result.scalar_one_or_none():
+            membership = ProjectMembership(
+                gid=generate_gid(),
+                user_gid=user_gid,
+                project_gid=project_gid,
+                access_level="commenter",
+                write_access="comment_only",
+            )
+            db.add(membership)
+    
+    await db.commit()
+    
+    return wrap_response(project.to_response())
+
+
+@router.post("/{project_gid}/removeFollowers")
+async def remove_project_followers(
+    project_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Remove followers from a project.
+    
+    Removes users from the list of followers for a project.
+    """
+    result = await db.execute(select(Project).where(Project.gid == project_gid))
+    project = result.scalar_one_or_none()
+    
+    if not project:
+        raise NotFoundError("Project", project_gid)
+    
+    followers_str = data.get("data", {}).get("followers", "")
+    follower_gids = [f.strip() for f in followers_str.split(",") if f.strip()]
+    
+    for user_gid in follower_gids:
+        result = await db.execute(
+            select(ProjectMembership)
+            .where(ProjectMembership.project_gid == project_gid)
+            .where(ProjectMembership.user_gid == user_gid)
+            .where(ProjectMembership.access_level == "commenter")
+        )
+        membership = result.scalar_one_or_none()
+        if membership:
+            await db.delete(membership)
+    
+    await db.commit()
+    
+    return wrap_response(project.to_response())
+
+
+@router.post("/{project_gid}/addCustomFieldSetting")
+async def add_custom_field_setting_to_project(
+    project_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Add a custom field setting to a project.
+    
+    Associates a custom field with a project, making it available for
+    tasks in that project.
+    
+    Based on: https://developers.asana.com/reference/addcustomfieldsettingforproject
+    """
+    from app.models.custom_field import CustomFieldSetting, CustomField
+    
+    result = await db.execute(select(Project).where(Project.gid == project_gid))
+    project = result.scalar_one_or_none()
+    
+    if not project:
+        raise NotFoundError("Project", project_gid)
+    
+    # Parse request using schema
+    setting_request = AddCustomFieldRequest(**data.get("data", {}))
+    
+    # Check if already added
+    result = await db.execute(
+        select(CustomFieldSetting)
+        .where(CustomFieldSetting.project_gid == project_gid)
+        .where(CustomFieldSetting.custom_field_gid == setting_request.custom_field)
+    )
+    if result.scalar_one_or_none():
+        return wrap_response(project.to_response())
+    
+    setting = CustomFieldSetting(
+        gid=generate_gid(),
+        project_gid=project_gid,
+        custom_field_gid=setting_request.custom_field,
+        is_important=setting_request.is_important or False,
+        order=0,
+    )
+    db.add(setting)
+    await db.commit()
+    
+    return wrap_response(project.to_response())
+
+
+@router.post("/{project_gid}/removeCustomFieldSetting")
+async def remove_custom_field_setting_from_project(
+    project_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Remove a custom field setting from a project.
+    
+    Removes the association between a custom field and a project.
+    
+    Based on: https://developers.asana.com/reference/removecustomfieldsettingforproject
+    """
+    from app.models.custom_field import CustomFieldSetting
+    
+    result = await db.execute(select(Project).where(Project.gid == project_gid))
+    project = result.scalar_one_or_none()
+    
+    if not project:
+        raise NotFoundError("Project", project_gid)
+    
+    # Parse request using schema
+    remove_request = RemoveCustomFieldRequest(**data.get("data", {}))
+    
+    result = await db.execute(
+        select(CustomFieldSetting)
+        .where(CustomFieldSetting.project_gid == project_gid)
+        .where(CustomFieldSetting.custom_field_gid == remove_request.custom_field)
+    )
+    setting = result.scalar_one_or_none()
+    
+    if setting:
+        await db.delete(setting)
+        await db.commit()
+    
+    return wrap_response(project.to_response())
+
+
+@router.post("/{project_gid}/saveAsTemplate")
+async def save_project_as_template(
+    project_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Save a project as a template.
+    
+    Creates a project template from an existing project, allowing it
+    to be used to create new projects with the same structure.
+    
+    Based on: https://developers.asana.com/reference/projectsaveasstemplate
+    
+    Returns a job that will asynchronously handle the project template creation.
+    """
+    from app.models.project import ProjectTemplate
+    from app.models.job import Job
+    
+    result = await db.execute(select(Project).where(Project.gid == project_gid))
+    project = result.scalar_one_or_none()
+    
+    if not project:
+        raise NotFoundError("Project", project_gid)
+    
+    # Parse request using schema
+    template_request = SaveAsTemplateRequest(**data.get("data", {}))
+    
+    template = ProjectTemplate(
+        gid=generate_gid(),
+        name=template_request.name,
+        description=project.notes,
+        html_description=project.html_notes,
+        color=project.color,
+        public=template_request.public if template_request.public is not None else project.public,
+        team_gid=template_request.team or project.team_gid,
+    )
+    db.add(template)
+    await db.flush()
+    
+    job = Job(
+        gid=generate_gid(),
+        resource_subtype="save_project_as_template",
+        status="succeeded",
+        new_project_template_gid=template.gid,
+    )
+    db.add(job)
+    await db.commit()
+    
+    return wrap_response(job.to_response())
+
+
+# Project Brief creation endpoint
+@router.post("/{project_gid}/project_brief")
+async def create_project_brief(
+    project_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Create a project brief.
+    
+    Creates a brief document for the project containing overview,
+    goals, and other planning information.
+    """
+    result = await db.execute(select(Project).where(Project.gid == project_gid))
+    project = result.scalar_one_or_none()
+    
+    if not project:
+        raise NotFoundError("Project", project_gid)
+    
+    brief_data = ProjectBriefCreate(**data.get("data", {}))
+    
+    brief = ProjectBrief(
+        gid=generate_gid(),
+        title=brief_data.title,
+        text=brief_data.text,
+        html_text=brief_data.html_text,
+        project_gid=project_gid,
+    )
+    db.add(brief)
+    await db.commit()
+    
+    return wrap_response(brief.to_response())
 

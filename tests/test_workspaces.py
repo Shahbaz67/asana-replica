@@ -51,3 +51,4 @@ async def test_get_workspace_users(client: AsyncClient, auth_headers, test_works
     assert isinstance(data, list)
     assert len(data) > 0
 
+

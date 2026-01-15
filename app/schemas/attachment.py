@@ -38,3 +38,4 @@ class AttachmentCompact(BaseModel):
     class Config:
         from_attributes = True
 
+

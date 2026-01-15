@@ -351,3 +351,59 @@ async def get_team_memberships(
         "next_page": paginated.next_page.model_dump() if paginated.next_page else None,
     }
 
+
+@membership_router.put("/{team_membership_gid}")
+async def update_team_membership(
+    team_membership_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Update a team membership.
+    
+    Updates the membership with new admin status.
+    """
+    result = await db.execute(
+        select(TeamMembership).where(TeamMembership.gid == team_membership_gid)
+    )
+    membership = result.scalar_one_or_none()
+    
+    if not membership:
+        raise NotFoundError("TeamMembership", team_membership_gid)
+    
+    update_data = data.get("data", {})
+    
+    if "is_admin" in update_data:
+        membership.is_admin = update_data["is_admin"]
+    if "is_guest" in update_data:
+        membership.is_guest = update_data["is_guest"]
+    
+    await db.commit()
+    await db.refresh(membership)
+    
+    return wrap_response(membership.to_response())
+
+
+@membership_router.delete("/{team_membership_gid}")
+async def delete_team_membership(
+    team_membership_gid: str,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Delete a team membership.
+    
+    Removes the user from the team.
+    """
+    result = await db.execute(
+        select(TeamMembership).where(TeamMembership.gid == team_membership_gid)
+    )
+    membership = result.scalar_one_or_none()
+    
+    if not membership:
+        raise NotFoundError("TeamMembership", team_membership_gid)
+    
+    await db.delete(membership)
+    await db.commit()
+    
+    return wrap_response({})
+

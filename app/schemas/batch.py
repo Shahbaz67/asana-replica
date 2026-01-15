@@ -26,3 +26,4 @@ class BatchResult(BaseModel):
     """Batch API result."""
     data: List[BatchResponse]
 
+

@@ -155,3 +155,4 @@ async def test_delete_task(client: AsyncClient, auth_headers, test_workspace):
     )
     assert get_response.status_code == 404
 
+

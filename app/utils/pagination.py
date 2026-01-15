@@ -76,3 +76,4 @@ class Pagination(BaseModel):
         """Apply pagination to items."""
         return paginate(items, self.offset, self.limit, base_path)
 
+

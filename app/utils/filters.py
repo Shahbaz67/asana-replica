@@ -100,3 +100,4 @@ class OptFieldsParser:
             return True  # No filtering means include all
         return field in self.fields or any(f.startswith(f"{field}.") for f in self.fields)
 
+

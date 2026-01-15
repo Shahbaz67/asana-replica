@@ -76,3 +76,4 @@ async def test_login_nonexistent_user(client: AsyncClient):
     )
     assert response.status_code == 401
 
+

@@ -138,3 +138,4 @@ class WorkspaceMembership(AsanaBase):
             "is_guest": self.is_guest,
         }
 
+

@@ -1,0 +1,776 @@
+{
+  "endpoints": [
+    {
+      "name": "Get multiple projects",
+      "method": "GET",
+      "path": "/projects",
+      "scope": "projects:read",
+      "description": "Returns the compact project records for some filtered set of projects",
+      "path_params": [],
+      "query_params": [
+        {"name": "workspace", "type": "string", "required": false, "description": "Workspace GID to filter projects"},
+        {"name": "team", "type": "string", "required": false, "description": "Team GID to filter projects"},
+        {"name": "archived", "type": "boolean", "required": false, "description": "Filter for archived projects"},
+        {"name": "limit", "type": "integer", "required": false, "description": "Results per page (max 100)"},
+        {"name": "offset", "type": "string", "required": false, "description": "Pagination offset token"},
+        {"name": "opt_fields", "type": "array", "required": false, "description": "Comma-separated list of optional fields"},
+        {"name": "opt_pretty", "type": "boolean", "required": false, "description": "Pretty print the response"}
+      ],
+      "body_params": [],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Create a project",
+      "method": "POST",
+      "path": "/projects",
+      "scope": "projects:write",
+      "description": "Create a new project in a workspace or team",
+      "path_params": [],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false, "description": "Comma-separated list of optional fields"},
+        {"name": "opt_pretty", "type": "boolean", "required": false, "description": "Pretty print the response"}
+      ],
+      "body_params": [
+        {"name": "name", "type": "string", "required": true, "description": "Name of the project"},
+        {"name": "workspace", "type": "string", "required": false, "description": "Workspace GID"},
+        {"name": "team", "type": "string", "required": false, "description": "Team GID (required for organizations)"},
+        {"name": "notes", "type": "string", "required": false, "description": "Project description"},
+        {"name": "html_notes", "type": "string", "required": false, "description": "HTML formatted notes"},
+        {"name": "color", "type": "string", "required": false, "description": "Color of the project", "enum": ["dark-pink", "dark-green", "dark-blue", "dark-red", "dark-teal", "dark-brown", "dark-orange", "dark-purple", "dark-warm-gray", "light-pink", "light-green", "light-blue", "light-red", "light-teal", "light-brown", "light-orange", "light-purple", "light-warm-gray", "none", "null"]},
+        {"name": "icon", "type": "string", "required": false, "description": "Icon for the project", "enum": ["list", "board", "timeline", "calendar", "rocket", "people", "graph", "star", "bug", "light_bulb", "globe", "gear", "notebook", "computer", "check", "target", "html", "megaphone", "chat_bubbles", "briefcase", "page_layout", "mountain_flag", "puzzle", "presentation", "line_and_symbols", "speed_dial", "ribbon", "shoe", "shopping_basket", "map", "ticket", "coins"]},
+        {"name": "default_view", "type": "string", "required": false, "description": "Default view", "enum": ["list", "board", "calendar", "timeline"]},
+        {"name": "start_on", "type": "date", "required": false, "description": "Start date (YYYY-MM-DD)"},
+        {"name": "due_on", "type": "date", "required": false, "description": "Due date (YYYY-MM-DD)"},
+        {"name": "due_date", "type": "date", "required": false, "deprecated": true, "description": "DEPRECATED: Use due_on"},
+        {"name": "owner", "type": "string", "required": false, "description": "Owner user GID"},
+        {"name": "followers", "type": "string", "required": false, "create_only": true, "description": "Comma-separated user GIDs"},
+        {"name": "public", "type": "boolean", "required": false, "deprecated": true, "description": "DEPRECATED: Use privacy_setting"},
+        {"name": "privacy_setting", "type": "string", "required": false, "description": "Privacy setting", "enum": ["public_to_workspace", "private_to_team", "private"]},
+        {"name": "archived", "type": "boolean", "required": false, "description": "Whether project is archived"},
+        {"name": "current_status_update", "type": "string", "required": false, "description": "Status update GID"},
+        {"name": "custom_fields", "type": "object", "required": false, "description": "Custom field values as {gid: value}"},
+        {"name": "default_access_level", "type": "string", "required": false, "description": "Default access for new members", "enum": ["admin", "editor", "commenter", "viewer"]},
+        {"name": "minimum_access_level_for_customization", "type": "string", "required": false, "description": "Min access to modify workflow", "enum": ["admin", "editor"]},
+        {"name": "minimum_access_level_for_sharing", "type": "string", "required": false, "description": "Min access to share", "enum": ["admin", "editor"]}
+      ],
+      "response_codes": ["201", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Get a project",
+      "method": "GET",
+      "path": "/projects/{project_gid}",
+      "scope": "projects:read",
+      "description": "Returns the complete project record for a single project",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false, "description": "Comma-separated list of optional fields"},
+        {"name": "opt_pretty", "type": "boolean", "required": false, "description": "Pretty print the response"}
+      ],
+      "body_params": [],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Update a project",
+      "method": "PUT",
+      "path": "/projects/{project_gid}",
+      "scope": "projects:write",
+      "description": "Updates an existing project",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false, "description": "Comma-separated list of optional fields"},
+        {"name": "opt_pretty", "type": "boolean", "required": false, "description": "Pretty print the response"}
+      ],
+      "body_params": [
+        {"name": "name", "type": "string", "required": false, "description": "Name of the project"},
+        {"name": "notes", "type": "string", "required": false, "description": "Project description"},
+        {"name": "html_notes", "type": "string", "required": false, "description": "HTML formatted notes"},
+        {"name": "color", "type": "string", "required": false, "description": "Color of the project"},
+        {"name": "icon", "type": "string", "required": false, "description": "Icon for the project"},
+        {"name": "default_view", "type": "string", "required": false, "description": "Default view"},
+        {"name": "start_on", "type": "date", "required": false, "description": "Start date (YYYY-MM-DD)"},
+        {"name": "due_on", "type": "date", "required": false, "description": "Due date (YYYY-MM-DD)"},
+        {"name": "owner", "type": "string", "required": false, "description": "Owner user GID"},
+        {"name": "public", "type": "boolean", "required": false, "deprecated": true, "description": "DEPRECATED: Use privacy_setting"},
+        {"name": "privacy_setting", "type": "string", "required": false, "description": "Privacy setting"},
+        {"name": "archived", "type": "boolean", "required": false, "description": "Whether project is archived"},
+        {"name": "completed", "type": "boolean", "required": false, "description": "Whether project is complete"},
+        {"name": "current_status_update", "type": "string", "required": false, "description": "Status update GID"},
+        {"name": "custom_fields", "type": "object", "required": false, "description": "Custom field values"},
+        {"name": "default_access_level", "type": "string", "required": false, "description": "Default access for new members"},
+        {"name": "minimum_access_level_for_customization", "type": "string", "required": false, "description": "Min access to modify workflow"},
+        {"name": "minimum_access_level_for_sharing", "type": "string", "required": false, "description": "Min access to share"}
+      ],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Delete a project",
+      "method": "DELETE",
+      "path": "/projects/{project_gid}",
+      "scope": "projects:write",
+      "description": "Deletes a project",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_pretty", "type": "boolean", "required": false, "description": "Pretty print the response"}
+      ],
+      "body_params": [],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Duplicate a project",
+      "method": "POST",
+      "path": "/projects/{project_gid}/duplicate",
+      "scope": "projects:write",
+      "description": "Creates and returns a job that will asynchronously handle the duplication",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false, "description": "Comma-separated list of optional fields"},
+        {"name": "opt_pretty", "type": "boolean", "required": false, "description": "Pretty print the response"}
+      ],
+      "body_params": [
+        {"name": "name", "type": "string", "required": true, "description": "Name for the new project"},
+        {"name": "team", "type": "string", "required": false, "description": "Target team GID"},
+        {"name": "include", "type": "array", "required": false, "description": "Elements to include", "enum": ["members", "notes", "forms", "task_notes", "task_assignee", "task_subtasks", "task_attachments", "task_dates", "task_dependencies", "task_followers", "task_tags", "task_projects"]},
+        {"name": "schedule_dates", "type": "object", "required": false, "description": "Schedule dates config with should_skip_weekends, start_on, due_on"}
+      ],
+      "response_codes": ["201", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Get projects a task is in",
+      "method": "GET",
+      "path": "/tasks/{task_gid}/projects",
+      "scope": "projects:read",
+      "description": "Returns a compact representation of all projects the task is in",
+      "path_params": [
+        {"name": "task_gid", "type": "string", "required": true, "description": "Task GID"}
+      ],
+      "query_params": [
+        {"name": "limit", "type": "integer", "required": false, "description": "Results per page"},
+        {"name": "offset", "type": "string", "required": false, "description": "Pagination offset"},
+        {"name": "opt_fields", "type": "array", "required": false, "description": "Optional fields"},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Get a team's projects",
+      "method": "GET",
+      "path": "/teams/{team_gid}/projects",
+      "scope": "projects:read",
+      "description": "Returns the compact project records for all projects in the team",
+      "path_params": [
+        {"name": "team_gid", "type": "string", "required": true, "description": "Team GID"}
+      ],
+      "query_params": [
+        {"name": "archived", "type": "boolean", "required": false, "description": "Filter for archived projects"},
+        {"name": "limit", "type": "integer", "required": false},
+        {"name": "offset", "type": "string", "required": false},
+        {"name": "opt_fields", "type": "array", "required": false},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Create a project in a team",
+      "method": "POST",
+      "path": "/teams/{team_gid}/projects",
+      "scope": "projects:write",
+      "description": "Creates a project shared with the given team",
+      "path_params": [
+        {"name": "team_gid", "type": "string", "required": true, "description": "Team GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [
+        {"name": "name", "type": "string", "required": true, "description": "Name of the project"},
+        {"name": "notes", "type": "string", "required": false},
+        {"name": "html_notes", "type": "string", "required": false},
+        {"name": "color", "type": "string", "required": false},
+        {"name": "icon", "type": "string", "required": false},
+        {"name": "default_view", "type": "string", "required": false},
+        {"name": "start_on", "type": "date", "required": false},
+        {"name": "due_on", "type": "date", "required": false},
+        {"name": "owner", "type": "string", "required": false},
+        {"name": "followers", "type": "string", "required": false, "create_only": true},
+        {"name": "privacy_setting", "type": "string", "required": false},
+        {"name": "custom_fields", "type": "object", "required": false},
+        {"name": "default_access_level", "type": "string", "required": false},
+        {"name": "minimum_access_level_for_customization", "type": "string", "required": false},
+        {"name": "minimum_access_level_for_sharing", "type": "string", "required": false}
+      ],
+      "response_codes": ["201", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Get all projects in a workspace",
+      "method": "GET",
+      "path": "/workspaces/{workspace_gid}/projects",
+      "scope": "projects:read",
+      "description": "Returns the compact project records for all projects in the workspace",
+      "path_params": [
+        {"name": "workspace_gid", "type": "string", "required": true, "description": "Workspace GID"}
+      ],
+      "query_params": [
+        {"name": "archived", "type": "boolean", "required": false},
+        {"name": "limit", "type": "integer", "required": false},
+        {"name": "offset", "type": "string", "required": false},
+        {"name": "opt_fields", "type": "array", "required": false},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Create a project in a workspace",
+      "method": "POST",
+      "path": "/workspaces/{workspace_gid}/projects",
+      "scope": "projects:write",
+      "description": "Creates a project in the specified workspace",
+      "path_params": [
+        {"name": "workspace_gid", "type": "string", "required": true, "description": "Workspace GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [
+        {"name": "name", "type": "string", "required": true},
+        {"name": "team", "type": "string", "required": false, "description": "Required for organization workspaces"},
+        {"name": "notes", "type": "string", "required": false},
+        {"name": "html_notes", "type": "string", "required": false},
+        {"name": "color", "type": "string", "required": false},
+        {"name": "icon", "type": "string", "required": false},
+        {"name": "default_view", "type": "string", "required": false},
+        {"name": "start_on", "type": "date", "required": false},
+        {"name": "due_on", "type": "date", "required": false},
+        {"name": "owner", "type": "string", "required": false},
+        {"name": "followers", "type": "string", "required": false, "create_only": true},
+        {"name": "privacy_setting", "type": "string", "required": false},
+        {"name": "custom_fields", "type": "object", "required": false},
+        {"name": "default_access_level", "type": "string", "required": false},
+        {"name": "minimum_access_level_for_customization", "type": "string", "required": false},
+        {"name": "minimum_access_level_for_sharing", "type": "string", "required": false}
+      ],
+      "response_codes": ["201", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Add a custom field to a project",
+      "method": "POST",
+      "path": "/projects/{project_gid}/addCustomFieldSetting",
+      "scope": "projects:write",
+      "description": "Adds a custom field setting to a project",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [
+        {"name": "custom_field", "type": "string", "required": true, "description": "Custom field GID"},
+        {"name": "is_important", "type": "boolean", "required": false, "description": "Whether to pin the field"},
+        {"name": "insert_before", "type": "string", "required": false, "description": "Custom field setting GID to insert before"},
+        {"name": "insert_after", "type": "string", "required": false, "description": "Custom field setting GID to insert after"}
+      ],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Remove a custom field from a project",
+      "method": "POST",
+      "path": "/projects/{project_gid}/removeCustomFieldSetting",
+      "scope": "projects:write",
+      "description": "Removes a custom field setting from a project",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [
+        {"name": "custom_field", "type": "string", "required": true, "description": "Custom field GID to remove"}
+      ],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Get task count of a project",
+      "method": "GET",
+      "path": "/projects/{project_gid}/task_counts",
+      "scope": "projects:read",
+      "description": "Get the number of tasks in a project",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [],
+      "response_codes": ["200", "400", "401", "403", "404", "500"],
+      "response_schema": {
+        "num_tasks": "integer",
+        "num_completed_tasks": "integer",
+        "num_incomplete_tasks": "integer",
+        "num_milestones": "integer",
+        "num_completed_milestones": "integer",
+        "num_incomplete_milestones": "integer"
+      }
+    },
+    {
+      "name": "Add users to a project",
+      "method": "POST",
+      "path": "/projects/{project_gid}/addMembers",
+      "scope": "projects:write",
+      "description": "Adds the specified list of users as members of the project",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [
+        {"name": "members", "type": "string", "required": true, "description": "Comma-separated list of user GIDs to add"}
+      ],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Remove users from a project",
+      "method": "POST",
+      "path": "/projects/{project_gid}/removeMembers",
+      "scope": "projects:write",
+      "description": "Removes the specified list of users from members of the project",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [
+        {"name": "members", "type": "string", "required": true, "description": "Comma-separated list of user GIDs to remove"}
+      ],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Add followers to a project",
+      "method": "POST",
+      "path": "/projects/{project_gid}/addFollowers",
+      "scope": "projects:write",
+      "description": "Adds the specified list of users as followers to the project",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [
+        {"name": "followers", "type": "string", "required": true, "description": "Comma-separated list of user GIDs to add as followers"}
+      ],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Remove followers from a project",
+      "method": "POST",
+      "path": "/projects/{project_gid}/removeFollowers",
+      "scope": "projects:write",
+      "description": "Removes the specified list of users from followers of the project",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [
+        {"name": "followers", "type": "string", "required": true, "description": "Comma-separated list of user GIDs to remove"}
+      ],
+      "response_codes": ["200", "400", "401", "403", "404", "500"]
+    },
+    {
+      "name": "Create a project template from a project",
+      "method": "POST",
+      "path": "/projects/{project_gid}/saveAsTemplate",
+      "scope": "projects:write",
+      "description": "Creates and returns a job that will asynchronously handle the project template creation",
+      "path_params": [
+        {"name": "project_gid", "type": "string", "required": true, "description": "Project GID"}
+      ],
+      "query_params": [
+        {"name": "opt_fields", "type": "array", "required": false},
+        {"name": "opt_pretty", "type": "boolean", "required": false}
+      ],
+      "body_params": [
+        {"name": "name", "type": "string", "required": true, "description": "Name of the new project template"},
+        {"name": "team", "type": "string", "required": false, "description": "Team to share the template with"},
+        {"name": "public", "type": "boolean", "required": false, "description": "Whether the template is public"}
+      ],
+      "response_codes": ["201", "400", "401", "403", "404", "500"]
+    }
+  ],
+  "response_schemas": {
+    "compact_schemas": {
+      "UserCompact": {
+        "gid": "string",
+        "resource_type": "user",
+        "name": "string"
+      },
+      "WorkspaceCompact": {
+        "gid": "string",
+        "resource_type": "workspace",
+        "name": "string"
+      },
+      "TeamCompact": {
+        "gid": "string",
+        "resource_type": "team",
+        "name": "string"
+      },
+      "ProjectCompact": {
+        "gid": "string",
+        "resource_type": "project",
+        "name": "string"
+      },
+      "ProjectTemplateCompact": {
+        "gid": "string",
+        "resource_type": "project_template",
+        "name": "string"
+      },
+      "ProjectBriefCompact": {
+        "gid": "string",
+        "resource_type": "project_brief"
+      },
+      "EnumOptionCompact": {
+        "gid": "string",
+        "resource_type": "enum_option",
+        "name": "string",
+        "enabled": "boolean",
+        "color": "string | null"
+      },
+      "StatusUpdateCompact": {
+        "gid": "string",
+        "resource_type": "status_update",
+        "title": "string",
+        "resource_subtype": "project_status_update"
+      }
+    },
+    "ProjectStatusResponse": {
+      "gid": "string",
+      "resource_type": "project_status",
+      "title": "string",
+      "text": "string | null",
+      "html_text": "string | null",
+      "color": "green | yellow | red | complete",
+      "author": "UserCompact | null",
+      "created_at": "datetime",
+      "created_by": "UserCompact | null",
+      "modified_at": "datetime | null"
+    },
+    "CustomFieldResponse": {
+      "gid": "string",
+      "resource_type": "custom_field",
+      "name": "string",
+      "type": "text | enum | multi_enum | number | date | people | formula",
+      "enum_options": "array of EnumOptionCompact | null",
+      "enum_value": "EnumOptionCompact | null",
+      "multi_enum_values": "array of EnumOptionCompact | null",
+      "text_value": "string | null",
+      "number_value": "number | null",
+      "date_value": "{ date: string, date_time: string } | null",
+      "people_value": "array of UserCompact | null",
+      "display_value": "string | null",
+      "enabled": "boolean",
+      "representation_type": "string | null",
+      "id_prefix": "string | null",
+      "input_restrictions": "string | null",
+      "is_formula_field": "boolean",
+      "description": "string | null",
+      "precision": "integer | null",
+      "format": "string | null",
+      "currency_code": "string | null",
+      "custom_label": "string | null",
+      "custom_label_position": "prefix | suffix | null",
+      "is_global_to_workspace": "boolean",
+      "has_notifications_enabled": "boolean",
+      "asana_created_field": "string | null",
+      "is_value_read_only": "boolean",
+      "created_by": "UserCompact | null",
+      "reference_value": "array of object | null",
+      "privacy_setting": "string | null",
+      "default_access_level": "string | null",
+      "resource_subtype": "text | enum | multi_enum | number | date | people | null"
+    },
+    "CustomFieldSettingResponse": {
+      "gid": "string",
+      "resource_type": "custom_field_setting",
+      "project": "ProjectCompact | null (deprecated - use parent)",
+      "parent": "ProjectCompact | PortfolioCompact | null",
+      "is_important": "boolean",
+      "custom_field": "CustomFieldResponse | null"
+    },
+    "ProjectResponse": {
+      "description": "Full project response for 200/201 status codes",
+      "fields": {
+        "gid": "string",
+        "resource_type": "project",
+        "name": "string",
+        "notes": "string | null",
+        "html_notes": "string | null",
+        "archived": "boolean",
+        "completed": "boolean",
+        "completed_at": "datetime | null",
+        "completed_by": "UserCompact | null",
+        "color": "string | null",
+        "icon": "string | null",
+        "default_view": "list | board | calendar | timeline",
+        "start_on": "date (YYYY-MM-DD) | null",
+        "due_on": "date (YYYY-MM-DD) | null",
+        "due_date": "date (deprecated - use due_on) | null",
+        "privacy_setting": "public_to_workspace | private_to_team | private",
+        "created_at": "datetime (ISO 8601)",
+        "modified_at": "datetime (ISO 8601)",
+        "owner": "UserCompact | null",
+        "workspace": "WorkspaceCompact",
+        "team": "TeamCompact | null",
+        "members": "array of UserCompact",
+        "followers": "array of UserCompact",
+        "current_status": "ProjectStatusResponse (deprecated) | null",
+        "current_status_update": "StatusUpdateCompact | null",
+        "custom_fields": "array of CustomFieldResponse",
+        "custom_field_settings": "array of CustomFieldSettingResponse",
+        "created_from_template": "ProjectTemplateCompact | null",
+        "project_brief": "ProjectBriefCompact | null",
+        "permalink_url": "string",
+        "default_access_level": "admin | editor | commenter | viewer",
+        "minimum_access_level_for_customization": "admin | editor",
+        "minimum_access_level_for_sharing": "admin | editor"
+      }
+    },
+    "TaskCountsResponse": {
+      "num_tasks": "integer",
+      "num_completed_tasks": "integer",
+      "num_incomplete_tasks": "integer",
+      "num_milestones": "integer",
+      "num_completed_milestones": "integer",
+      "num_incomplete_milestones": "integer"
+    },
+    "JobResponse": {
+      "gid": "string",
+      "resource_type": "job",
+      "resource_subtype": "duplicate_project | save_project_as_template",
+      "status": "not_started | in_progress | succeeded | failed",
+      "new_project": "ProjectCompact | null",
+      "new_project_template": "ProjectTemplateCompact | null"
+    }
+  },
+  "response_examples": {
+    "200_project": {
+      "data": {
+        "gid": "12345",
+        "resource_type": "project",
+        "name": "Stuff to buy",
+        "archived": false,
+        "color": "light-green",
+        "icon": "chat_bubbles",
+        "created_at": "2012-02-22T02:06:58.147Z",
+        "current_status": {
+          "gid": "12345",
+          "resource_type": "project_status",
+          "title": "Status Update - Jun 15",
+          "text": "The project is moving forward according to plan...",
+          "html_text": "<body>The project <strong>is</strong> moving forward according to plan...</body>",
+          "color": "green",
+          "author": { "gid": "12345", "resource_type": "user", "name": "Greg Sanchez" },
+          "created_at": "2012-02-22T02:06:58.147Z",
+          "created_by": { "gid": "12345", "resource_type": "user", "name": "Greg Sanchez" },
+          "modified_at": "2012-02-22T02:06:58.147Z"
+        },
+        "current_status_update": {
+          "gid": "12345",
+          "resource_type": "status_update",
+          "title": "Status Update - Jun 15",
+          "resource_subtype": "project_status_update"
+        },
+        "custom_field_settings": [
+          {
+            "gid": "12345",
+            "resource_type": "custom_field_setting",
+            "project": { "gid": "12345", "resource_type": "project", "name": "Stuff to buy" },
+            "is_important": false,
+            "parent": { "gid": "12345", "resource_type": "project", "name": "Stuff to buy" },
+            "custom_field": {
+              "gid": "12345",
+              "resource_type": "custom_field",
+              "name": "Status",
+              "type": "text",
+              "enabled": true,
+              "resource_subtype": "text"
+            }
+          }
+        ],
+        "default_view": "calendar",
+        "due_date": "2019-09-15",
+        "due_on": "2019-09-15",
+        "html_notes": "<body>These are things we need to purchase.</body>",
+        "members": [{ "gid": "12345", "resource_type": "user", "name": "Greg Sanchez" }],
+        "modified_at": "2012-02-22T02:06:58.147Z",
+        "notes": "These are things we need to purchase.",
+        "privacy_setting": "public_to_workspace",
+        "start_on": "2019-09-14",
+        "default_access_level": "admin",
+        "minimum_access_level_for_customization": "admin",
+        "minimum_access_level_for_sharing": "admin",
+        "custom_fields": [
+          {
+            "gid": "12345",
+            "resource_type": "custom_field",
+            "name": "Status",
+            "type": "text",
+            "enabled": true,
+            "text_value": "Some Value",
+            "display_value": "blue"
+          }
+        ],
+        "completed": false,
+        "completed_at": null,
+        "completed_by": null,
+        "followers": [{ "gid": "12345", "resource_type": "user", "name": "Greg Sanchez" }],
+        "owner": { "gid": "12345", "resource_type": "user", "name": "Greg Sanchez" },
+        "team": { "gid": "12345", "resource_type": "team", "name": "Marketing" },
+        "permalink_url": "https://app.asana.com/1/12345/project/123456789",
+        "project_brief": { "gid": "12345", "resource_type": "project_brief" },
+        "created_from_template": { "gid": "12345", "resource_type": "project_template", "name": "Packing list" },
+        "workspace": { "gid": "12345", "resource_type": "workspace", "name": "My Company Workspace" }
+      }
+    },
+    "200_project_list": {
+      "data": [
+        { "gid": "12345", "resource_type": "project", "name": "Stuff to buy" },
+        { "gid": "12346", "resource_type": "project", "name": "Marketing Campaign" }
+      ],
+      "next_page": {
+        "offset": "eyJ0eXAiOJiKV1iQLCJhbGciOiJIUzI1NiJ9",
+        "path": "/projects?limit=2&offset=eyJ0eXAiOJiKV1iQLCJhbGciOiJIUzI1NiJ9",
+        "uri": "https://app.asana.com/api/1.0/projects?limit=2&offset=eyJ0eXAiOJiKV1iQLCJhbGciOiJIUzI1NiJ9"
+      }
+    },
+    "200_task_counts": {
+      "data": {
+        "num_tasks": 25,
+        "num_completed_tasks": 10,
+        "num_incomplete_tasks": 15,
+        "num_milestones": 3,
+        "num_completed_milestones": 1,
+        "num_incomplete_milestones": 2
+      }
+    },
+    "201_job": {
+      "data": {
+        "gid": "12345",
+        "resource_type": "job",
+        "resource_subtype": "duplicate_project",
+        "status": "in_progress",
+        "new_project": { "gid": "67890", "resource_type": "project", "name": "My Project Copy" }
+      }
+    },
+    "400_error": {
+      "errors": [
+        {
+          "message": "project: Missing input",
+          "help": "For more information on API status codes and how to handle them, read the docs on errors: https://developers.asana.com/docs/errors"
+        }
+      ]
+    },
+    "401_error": {
+      "errors": [
+        {
+          "message": "Not Authorized",
+          "help": "A valid authentication token was not provided with the request, so the API could not associate a user with the request."
+        }
+      ]
+    },
+    "403_error": {
+      "errors": [
+        {
+          "message": "Forbidden",
+          "help": "The authentication and request syntax was valid but the server is refusing to complete the request. This can happen if you try to read or write to objects or properties that the user does not have access to."
+        }
+      ]
+    },
+    "404_error": {
+      "errors": [
+        {
+          "message": "project: Unknown object: 12345",
+          "help": "For more information on API status codes and how to handle them, read the docs on errors: https://developers.asana.com/docs/errors"
+        }
+      ]
+    },
+    "500_error": {
+      "errors": [
+        {
+          "message": "Server Error",
+          "phrase": "6 sad squid snuggle softly",
+          "help": "For more information on API status codes and how to handle them, read the docs on errors: https://developers.asana.com/docs/errors"
+        }
+      ]
+    }
+  },
+  "enums": {
+    "color": ["dark-pink", "dark-green", "dark-blue", "dark-red", "dark-teal", "dark-brown", "dark-orange", "dark-purple", "dark-warm-gray", "light-pink", "light-green", "light-blue", "light-red", "light-teal", "light-brown", "light-orange", "light-purple", "light-warm-gray", "none", "null"],
+    "icon": ["list", "board", "timeline", "calendar", "rocket", "people", "graph", "star", "bug", "light_bulb", "globe", "gear", "notebook", "computer", "check", "target", "html", "megaphone", "chat_bubbles", "briefcase", "page_layout", "mountain_flag", "puzzle", "presentation", "line_and_symbols", "speed_dial", "ribbon", "shoe", "shopping_basket", "map", "ticket", "coins"],
+    "default_view": ["list", "board", "calendar", "timeline"],
+    "privacy_setting": ["public_to_workspace", "private_to_team", "private"],
+    "default_access_level": ["admin", "editor", "commenter", "viewer"],
+    "minimum_access_level": ["admin", "editor"],
+    "duplicate_include": ["members", "notes", "forms", "task_notes", "task_assignee", "task_subtasks", "task_attachments", "task_dates", "task_dependencies", "task_followers", "task_tags", "task_projects"],
+    "job_status": ["not_started", "in_progress", "succeeded", "failed"],
+    "status_color": ["green", "yellow", "red", "blue", "complete"],
+    "custom_field_type": ["text", "enum", "multi_enum", "number", "date", "people", "formula"]
+  },
+  "status_codes": {
+    "200": {
+      "description": "Success - Returns requested data",
+      "content_type": "application/json",
+      "response_format": "{ data: ProjectResponse | ProjectResponse[] }"
+    },
+    "201": {
+      "description": "Created - Returns newly created resource",
+      "content_type": "application/json",
+      "response_format": "{ data: ProjectResponse | JobResponse }"
+    },
+    "400": {
+      "description": "Bad Request - Missing or malformed parameter",
+      "content_type": "application/json",
+      "response_format": "{ errors: [{ message, help }] }"
+    },
+    "401": {
+      "description": "Unauthorized - Invalid or missing authentication token",
+      "content_type": "application/json",
+      "response_format": "{ errors: [{ message, help }] }"
+    },
+    "403": {
+      "description": "Forbidden - User lacks permission to access resource",
+      "content_type": "application/json",
+      "response_format": "{ errors: [{ message, help }] }"
+    },
+    "404": {
+      "description": "Not Found - Resource does not exist",
+      "content_type": "application/json",
+      "response_format": "{ errors: [{ message, help }] }"
+    },
+    "500": {
+      "description": "Server Error - Internal server error with phrase for support",
+      "content_type": "application/json",
+      "response_format": "{ errors: [{ message, phrase, help }] }"
+    }
+  }
+}
+

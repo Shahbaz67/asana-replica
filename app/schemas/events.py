@@ -18,3 +18,4 @@ class EventsResponse(BaseModel):
     sync: str
     has_more: bool = False
 
+

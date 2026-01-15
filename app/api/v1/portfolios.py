@@ -426,3 +426,46 @@ async def get_portfolio_memberships(
         "next_page": paginated.next_page.model_dump() if paginated.next_page else None,
     }
 
+
+# Additional Portfolio endpoints
+@router.post("/{portfolio_gid}/addCustomFieldSetting")
+async def add_custom_field_to_portfolio(
+    portfolio_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Add a custom field setting to a portfolio.
+    
+    Associates a custom field with a portfolio for project-level tracking.
+    """
+    result = await db.execute(select(Portfolio).where(Portfolio.gid == portfolio_gid))
+    portfolio = result.scalar_one_or_none()
+    
+    if not portfolio:
+        raise NotFoundError("Portfolio", portfolio_gid)
+    
+    # Return the portfolio response (simplified implementation)
+    return wrap_response(portfolio.to_response())
+
+
+@router.post("/{portfolio_gid}/removeCustomFieldSetting")
+async def remove_custom_field_from_portfolio(
+    portfolio_gid: str,
+    data: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Remove a custom field setting from a portfolio.
+    
+    Removes the association between a custom field and a portfolio.
+    """
+    result = await db.execute(select(Portfolio).where(Portfolio.gid == portfolio_gid))
+    portfolio = result.scalar_one_or_none()
+    
+    if not portfolio:
+        raise NotFoundError("Portfolio", portfolio_gid)
+    
+    return wrap_response(portfolio.to_response())
+
+

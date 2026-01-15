@@ -335,3 +335,4 @@ class ProjectTemplate(AsanaBase):
             response["owner"] = {"gid": self.owner_gid, "resource_type": "user"}
         return response
 
+
